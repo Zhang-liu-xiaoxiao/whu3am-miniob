@@ -246,6 +246,17 @@ RC DiskBufferPool::close_file()
   return RC::SUCCESS;
 }
 
+RC DiskBufferPool::remove_file()
+{
+  int ret = ::remove(file_name_.c_str());
+  if (ret != 0) {
+    LOG_ERROR("Failed to delete file . file name=%s, errmsg=%s", file_name_.c_str(), strerror(errno));
+    return RC::IOERR;
+  }
+  return RC::SUCCESS;
+
+}
+
 RC DiskBufferPool::get_this_page(PageNum page_num, Frame **frame)
 {
   RC rc = RC::SUCCESS;

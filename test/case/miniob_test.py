@@ -52,8 +52,8 @@ python3 miniob_test.py \
         --test-result-dir=result \
         --test-result-tmp-dir=./result_tmp \
         --use-unix-socket \
-        --git-repo=https://github.com/oceanbase/miniob.git \
-        --git-branch=main \
+        --git-repo=https://github.com/Zhang-liu-xiaoxiao/whu3am-miniob \
+        --git-branch=zlxx_drop_table_test \
         --code-type=git \
         --target-dir=./miniob \
         --log=stdout \
@@ -103,7 +103,7 @@ class ResultWriter:
 
   def __exit__(self, exc_type, exc_value, exc_tb):
     self.close()
-  
+
   def close(self):
     if self.__file is not None:
       self.__file.close()
@@ -158,7 +158,7 @@ class MiniObServer:
   def __check_base_dir(self, base_dir: str):
     if not(os.path.isdir(base_dir)):
       raise(Exception("failed to check base directory. " + base_dir + " is not a directory"))
-    
+
     observer_path = self.__observer_path(base_dir)
     if not(os.path.isfile(observer_path)):
       raise(Exception("observer not exists: " + observer_path))
@@ -170,7 +170,7 @@ class MiniObServer:
     os.makedirs(data_dir, exist_ok=True)
     if not(os.path.isdir(data_dir)):
       raise(Exception(data_dir + " is not a directory or failed to create"))
-    
+
     # results = os.listdir(data_dir)
     # if len(results) != 0:
     #   raise(Exception(data_dir + " is not empty"))
@@ -208,7 +208,7 @@ class MiniObServer:
     if return_code != None:
       logging.error("Failed to start observer, exit with code %d", return_code)
       return False
-    
+
     logging.info('start subprocess with pid=%d', process.pid)
     #os.setpgid(process.pid, GlobalConfig.group_id)
 
@@ -245,7 +245,7 @@ class MiniObServer:
     return True
 
   def clean(self):
-    ''' 
+    '''
     清理数据目录（如果没有配置调试模式）
     调试模式可能需要查看服务器程序运行的日志
     '''
@@ -320,7 +320,7 @@ class MiniObClient:
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     errno = s.connect_ex(('127.0.0.1', server_port))
     if errno != 0:
-      logging.error("Failed to connect to server with port %d. errno=%d:%s", 
+      logging.error("Failed to connect to server with port %d. errno=%d:%s",
                     server_port, errno, os.strerror(errno))
       s = None
     return s
@@ -329,7 +329,7 @@ class MiniObClient:
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     errno = sock.connect_ex(server_socket)
     if errno != 0:
-      logging.error("Failed to connect to server with address '%s'. errno=%d:%s", 
+      logging.error("Failed to connect to server with address '%s'. errno=%d:%s",
                     server_socket, errno, os.strerror(errno))
       sock = None
     return sock
@@ -339,7 +339,7 @@ class MiniObClient:
 
   def __recv_response(self):
     result = ''
-    
+
     while True:
       events = self.__poller.poll(self.__time_limit * 1000)
       if len(events) == 0:
@@ -350,7 +350,7 @@ class MiniObClient:
         msg = "Failed to receive from server. poll return POLLHUP(%s) or POLLERR(%s)" % ( str(event & select.POLLHUP), str(event & select.POLLERR))
         logging.info(msg)
         raise Exception(msg)
-      
+
       data = self.__socket.recv(self.__buffer_size)
       if len(data) > 0:
         result_tmp = data.decode(encoding= GlobalConfig.default_encoding)
@@ -364,7 +364,7 @@ class MiniObClient:
       else:
         logging.info("receive from server error. result len=%d", len(data))
         raise Exception("receive return error. the connection may be closed")
-          
+
 
   def run_sql(self, sql: str):
     try:
@@ -410,7 +410,7 @@ class CommandRunner:
 
   def __enter__(self):
     return self
-  
+
   def __exit__(self, exc_type, exc_value, exc_tb):
     self.close()
 
@@ -509,16 +509,16 @@ class CommandRunner:
       result = False
 
     return result
-    
+
   def run_anything(self, argline: str):
     argline = argline.strip()
     if len(argline) == 0:
       self.__result_writer.write_line('') # 读取到一个空行，也写入一个空行
       return True
-    
+
     if argline.startswith(self.__comment_prefix):
       return True
-    
+
     if argline.startswith(self.__command_prefix):
       return self.run_command(argline)
 
@@ -630,7 +630,7 @@ class TestCaseLister:
       full_path = base_dir + "/" + test_name + self.__suffix
       if not(os.path.isfile(full_path)):
         raise(Exception(full_path + " is not a file"))
-      
+
       test_case = TestCase(False, 0)
       test_case.init_with_file(test_name, full_path)
       test_cases.append(test_case)
@@ -671,13 +671,13 @@ class TestScores:
 
     self.__scores = scores
     self.__is_valid = True
-  
+
   def is_necessary(self, name):
     if name in self.__scores.keys():
       return self.__scores[name].is_necessary()
 
     return None
-  
+
   def acquire_score(self, name):
     if name in self.__scores.keys():
       return self.__scores[name].score()
@@ -693,16 +693,16 @@ class EvalResult:
     self.__necessary_score = 0
     self.__option_score = 0
     self.__status = -1
-    
+
   def clear_message(self):
     self.__message = []
-    
+
   def append_message(self, message):
     self.__message.append(message)
-    
+
   def get_message(self):
     return "\n".join(self.__message)
-  
+
   def add_necessary_score(self, score: int):
     self.__necessary_score += score
 
@@ -715,19 +715,19 @@ class EvalResult:
   def clear_score(self):
     self.__option_score = 0
     self.__necessary_score = 0
-    
+
   def get_score(self):
     return self.__necessary_score + self.__option_score
-  
+
   def set_cost(self):
     self.__status = 0
-    
+
   def set_no_cost(self):
     self.__status = -1
-    
+
   def get_status(self):
     return self.__status
-  
+
   def is_success(self):
     return self.__status == 0
 
@@ -740,7 +740,7 @@ class EvalResult:
     json_encoder.item_separator = ','
     json_encoder.key_separator = ':'
     return json_encoder.encode(json_dict)
-  
+
 class TestSuite:
 
   def __init__(self):
@@ -757,13 +757,13 @@ class TestSuite:
     self.__test_names = None # 如果指定测试哪些Case，就不再遍历所有的cases
     self.__miniob_server = None
     self.__test_case_scores = TestScores()
-  
+
   def set_test_names(self, tests):
     self.__test_names = tests
 
   def set_test_case_base_dir(self, test_case_base_dir):
     self.__test_case_base_dir = test_case_base_dir
-  
+
   def set_test_result_base_dir(self, test_result_base_dir):
     self.__test_result_base_dir = test_result_base_dir
 
@@ -772,7 +772,7 @@ class TestSuite:
     os.makedirs(test_result_tmp_dir, exist_ok=True)
     if not(os.path.isdir(test_result_tmp_dir)):
       raise(Exception("Failed to set test result temp directory. " + test_result_tmp_dir + " is not a directory or failed to create"))
-  
+
   def set_test_case_scores(self, scores_path: str):
     with open(scores_path) as fp:
       self.__test_case_scores.init_file(fp)
@@ -899,7 +899,7 @@ class TestSuite:
 
     # 找出所有需要测试Case
     test_cases = self.__get_all_test_cases()
-    
+
     if test_cases is None or len(test_cases) == 0:
       logging.info("Cannot find any test cases")
       return True
@@ -933,7 +933,7 @@ class TestSuite:
           else:
             eval_result.add_option_score(test_case.get_score())
           eval_result.append_message("%s is success" % test_case.get_name())
-        else: 
+        else:
           if self.__test_case_scores.is_necessary(test_case.get_name()):
             necessary_all_passed = False
 
@@ -967,7 +967,7 @@ class TestSuite:
       if self.__use_unix_socket:
         unix_socket = self.__get_unix_socket_address()
 
-      miniob_server = MiniObServer(self.__db_server_base_dir, self.__db_data_dir, 
+      miniob_server = MiniObServer(self.__db_server_base_dir, self.__db_data_dir,
           self.__db_config, self.__server_port, unix_socket, clean_data_dir)
       miniob_server.init_server()
       result = miniob_server.start_server()
@@ -984,13 +984,13 @@ class TestSuite:
     if self.__miniob_server is not None:
       self.__miniob_server.stop_server()
       # 不再清理掉中间结果。如果从解压代码开始，那么执行的中间结果不需要再清理，所有的数据都在临时目录
-      # self.__miniob_server.clean() 
+      # self.__miniob_server.clean()
       self.__miniob_server = None
 
 def __init_options():
   options_parser = OptionParser()
   # 是否仅仅生成结果，而不对结果做校验。一般在新生成一个case时使用
-  options_parser.add_option('', '--report-only', action='store_true', dest='report_only', default=False, 
+  options_parser.add_option('', '--report-only', action='store_true', dest='report_only', default=False,
                             help='just report the result')
   # 测试case文件存放的目录
   options_parser.add_option('', '--test-case-dir', action='store', type='string', dest='test_case_base_dir', default='test',
@@ -1006,13 +1006,13 @@ def __init_options():
                             help='the directory that contains the generated test result files')
 
   # 测试哪些用例。不指定就会扫描test-case-dir目录下面的所有测试用例。指定的话，就从test-case-dir目录下面按照名字找
-  options_parser.add_option('', '--test-cases', action='store', type='string', dest='test_cases', 
+  options_parser.add_option('', '--test-cases', action='store', type='string', dest='test_cases',
                             help='test cases. If none, we will iterate the test case directory. Split with \',\' if more than one')
 
   # 测试时服务器程序基础路径，下面包含bin/observer执行主程序和etc/observer.ini配置文件
   options_parser.add_option('', '--db-base-dir', action='store', type='string', dest='db_base_dir',
                             help='the directory of miniob database which db-base-dir/bin contains the binary executor file')
-  
+
   # 测试时服务器程序的数据文件存放目录
   options_parser.add_option('', '--db-data-dir', action='store', type='string', dest='db_data_dir', default='miniob_data_test',
                             help='the directory of miniob database\'s data for test')
@@ -1025,7 +1025,7 @@ def __init_options():
                             help='the server port. should be the same with the value in the config')
   options_parser.add_option('', '--use-unix-socket', action='store_true', dest='use_unix_socket',
                             help='If true, server-port will be ignored and will use a random address socket.')
-  
+
   # 可以手动启动服务端程序，然后添加这个选项，就不会再启动服务器程序。一般调试时使用
   options_parser.add_option('', '--server-started', action='store_true', dest='server_started', default=False,
                             help='Whether the server is already started. If true, we will not start the server')
@@ -1056,7 +1056,7 @@ def __init_options():
   # 之前已经编译过，是否需要重新编译，还是直接执行make就可以了
   options_parser.add_option('', '--compile-rebuild', action='store_true', default=False, dest='compile_rebuild',
                             help='whether rebuild if build path exists')
-  options_parser.add_option('', '--git-repo', action='store', dest='git_repo', 
+  options_parser.add_option('', '--git-repo', action='store', dest='git_repo',
                             help='the git repo in https')
   options_parser.add_option('', '--git-branch', action='store', dest='git_branch', default='',
                             help='the git repo branch')
@@ -1138,7 +1138,7 @@ def __init_test_suite_with_source_code(options, eval_result):
     else:
       logging.info("decompress source code done")
   elif options.code_type == 'git':
-    result = git_clone(options.git_repo, options.git_branch, options.git_repo_prefix, 
+    result = git_clone(options.git_repo, options.git_branch, options.git_repo_prefix,
                         options.git_user, options.git_token, proj_path, 10, eval_result)
     if not result:
       return None
@@ -1173,7 +1173,7 @@ def __run_shell_command(command_args):
     line_str = line.decode(GlobalConfig.default_encoding)
     if isinstance(line_str, str):
       outputs.append(line_str.strip())
-    
+
     return_code = command_process.poll()
     if return_code is not None:
       return return_code, outputs
@@ -1195,8 +1195,8 @@ def git_pull(to_path: str, timeout:int, eval_result:EvalResult):
     return False
   return True
 
-def git_clone(repo: str, branch: str, repo_prefix: str, 
-              user_name: str, password: str, 
+def git_clone(repo: str, branch: str, repo_prefix: str,
+              user_name: str, password: str,
               to_path: str, timeout:int, eval_result: EvalResult):
   '''
   从指定仓库拉取代码。
@@ -1267,7 +1267,7 @@ def unzip(source_dir: str, target_dir: str, overwrite: bool):
   if ret != 0:
     logging.error("Failed to decompress the zip package. source_dir=%s, target_dir=%s",
                   source_dir, target_dir)
-    
+
     for output in outputs:
       logging.error(output)
     return False
@@ -1310,7 +1310,7 @@ def compile(work_dir: str, build_dir: str, cmake_args: str, make_args: str, rebu
     shutil.rmtree(build_path)
 
   os.makedirs(build_path, exist_ok=True)
-  
+
   logging.info("start compiling ... build path=%s", build_path)
   ret, outputs = run_cmake(work_dir, build_path, cmake_args)
   if ret == False:
@@ -1346,7 +1346,7 @@ def run(options):
   '''
   return result, reason
   result: True or False
-  
+
   '''
   __init_log(options)
 
