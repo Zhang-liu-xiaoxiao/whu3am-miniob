@@ -17,3 +17,6 @@ GRTAGS
 GPATH
 GTAGS
 #*#
+/test/case/result_tmp/
+/test/case/miniob/
+observer.log.*
