@@ -17,7 +17,7 @@ MESSAGE("MAIN SRC: " ${MAIN_SRC})
 FOREACH (F ${ALL_SRC})
 
     IF (NOT ${F} STREQUAL ${MAIN_SRC})
-        SET(LIB_SRC ${LIB_SRC} ${F})
+        SET(LIB_SRC ${LIB_SRC} ${F} sql/operator/update_operator.cpp sql/operator/update_operator.h)
     ENDIF()
 
     MESSAGE("Use " ${F})
@@ -29,7 +29,7 @@ SET(LIBRARIES common pthread dl event_pthreads event jsoncpp)
 # 指定目标文件位置
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/../../bin)
 MESSAGE("Binary directory:" ${EXECUTABLE_OUTPUT_PATH})
-ADD_EXECUTABLE(${PROJECT_NAME} ${ALL_SRC})
+ADD_EXECUTABLE(${PROJECT_NAME} ${ALL_SRC} sql/operator/update_operator.cpp sql/operator/update_operator.h)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${LIBRARIES})
 
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/../../lib)
