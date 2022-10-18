@@ -12,6 +12,7 @@ See the Mulan PSL v2 for more details. */
 // Created by Wangyunlai on 2022/5/22.
 //
 
+#include <cmath>
 #include "sql/stmt/insert_stmt.h"
 #include "common/log/log.h"
 #include "storage/common/db.h"
@@ -21,7 +22,7 @@ InsertStmt::InsertStmt(Table *table, const Value *values, int value_amount)
   : table_ (table), values_(values), value_amount_(value_amount)
 {}
 
-RC InsertStmt::create(Db *db, const Inserts &inserts, Stmt *&stmt)
+RC InsertStmt::create(Db *db,Inserts &inserts, Stmt *&stmt)
 {
   const char *table_name = inserts.relation_name;
   if (nullptr == db || nullptr == table_name || inserts.value_num <= 0) {
@@ -38,7 +39,7 @@ RC InsertStmt::create(Db *db, const Inserts &inserts, Stmt *&stmt)
   }
 
   // check the fields number
-  const Value *values = inserts.values;
+  Value *values = inserts.values;
   const int value_num = inserts.value_num;
   const TableMeta &table_meta = table->table_meta();
   const int field_num = table_meta.field_num() - table_meta.sys_field_num();
@@ -54,9 +55,58 @@ RC InsertStmt::create(Db *db, const Inserts &inserts, Stmt *&stmt)
     const AttrType field_type = field_meta->type();
     const AttrType value_type = values[i].type;
     if (field_type != value_type) { // TODO try to convert the value type to field type
-      LOG_WARN("field type mismatch. table=%s, field=%s, field type=%d, value_type=%d", 
-               table_name, field_meta->name(), field_type, value_type);
-      return RC::SCHEMA_FIELD_TYPE_MISMATCH;
+      switch (field_type) {
+
+        case UNDEFINED:
+          break;
+        case CHARS: {
+          auto old_type = values[i].type;
+          values[i].type = CHARS;
+          if (old_type == INTS) {
+            sprintf((char *)values[i].data, "%d", abs(*(int *)values[i].data));
+          } else if (old_type == FLOATS) {
+            sprintf((char *)values[i].data, "%g", fabs(*(float *)values[i].data));
+          } else {
+            LOG_ERROR("Wrong field type");
+            return RC::SCHEMA_FIELD_TYPE_MISMATCH;
+          }
+          break;
+        }
+        case INTS: {
+          auto old_type = values[i].type;
+          values[i].type = INTS;
+          if (old_type == CHARS) {
+            auto v = atoi((char *)values[i].data);
+            *(int *)values[i].data = v;
+          } else if (old_type == FLOATS) {
+            float f = *(float *)values[i].data;
+            *(int *)values[i].data = (int)lround(f);
+          } else {
+            LOG_ERROR("Wrong field type");
+            return RC::SCHEMA_FIELD_TYPE_MISMATCH;
+          }
+          break;
+        }
+        case FLOATS:{
+          auto old_type = values[i].type;
+          values[i].type = FLOATS;
+          if (old_type == CHARS) {
+            float f = atof((char *)values[i].data);
+            *(float *)values[i].data = f;
+          } else if (old_type == INTS) {
+            int v = *(int *)values[i].data;
+            *(float *)values[i].data = (float )v;
+          } else {
+            LOG_ERROR("Wrong field type");
+            return RC::SCHEMA_FIELD_TYPE_MISMATCH;
+          }
+          break;
+        }
+        default:
+        LOG_WARN("field type mismatch. table=%s, field=%s, field type=%d, value_type=%d",
+                 table_name, field_meta->name(), field_type, value_type);
+        return RC::SCHEMA_FIELD_TYPE_MISMATCH;
+      }
     }
   }
 
